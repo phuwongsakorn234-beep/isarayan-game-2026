@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>จับคู่สุภาษิตอิศรญาณภาษิต</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:16px;background:#f4f6fb;color:#172033;font-family:Tahoma,"Noto Sans Thai",sans-serif}
+main{max-width:900px;margin:auto}h1{text-align:center;font-size:clamp(22px,4vw,30px);margin:8px 0 18px}
+.top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:14px}.pill{background:#fff;border:1px solid #dce2ee;border-radius:12px;padding:9px 13px;font-weight:bold}
+#board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.card{min-height:112px;border:2px solid #cbd5e1;border-radius:14px;background:#fff;color:#000;padding:13px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:17px;line-height:1.55;font-weight:600;white-space:normal;overflow-wrap:anywhere;cursor:pointer}
+.card.closed{background:#334155;border-color:#334155;color:#fff}.card.closed span{visibility:hidden}
+.card.open{background:#fff;color:#000;border-color:#64748b}.card.matched{background:#e8f5e9;color:#000;border-color:#2e7d32;cursor:default}
+#notice{text-align:center;min-height:28px;margin:14px 0;font-weight:bold}
+.controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}button.action{border:0;border-radius:12px;padding:12px 20px;background:#2457a7;color:#fff;font-size:16px;font-weight:bold}
+@media(max-width:520px){body{padding:11px}.card{min-height:120px;padding:10px;font-size:15px}#board{gap:8px}}
+</style></head><body><main>
+<h1>จับคู่สุภาษิตอิศรญาณภาษิต</h1>
+<div class="top"><div class="pill" id="stage"></div><div class="pill" id="progress"></div><div class="pill" id="score"></div></div>
+<div id="board"></div><div id="notice"></div>
+<div class="controls"><button class="action" id="next" hidden>ด่านต่อไป</button><button class="action" id="restart">เริ่มใหม่</button></div>
+</main><script>
+const allPairs = [["ชายข้าวเปลือก หญิงข้าวสาร", "เปรียบชายหญิงว่ามีธรรมชาติและความละเอียดอ่อนแตกต่างกัน"], ["น้ำพึ่งเรือ เสือพึ่งป่า", "ต่างฝ่ายต่างต้องพึ่งพาอาศัยกัน"], ["ผู้ใดดีดีต่อ อย่าก่อกิจ", "ควรทำดีกับผู้ที่ทำดีกับเรา"], ["ผู้ใดผิด ผ่อนพักอย่าหักหาญ", "เมื่อผู้อื่นผิดพลาด ควรให้อภัยและตักเตือนอย่างเหมาะสม"], ["รักสั้นนั้นให้รู้อยู่เพียงสั้น", "เมื่อความสัมพันธ์หรือสิ่งใดมีขอบเขตจำกัด ก็ควรรู้จักประมาณ"], ["อย่าดูถูกบุญกรรมว่าทำน้อย", "อย่ามองข้ามผลของการกระทำ แม้เป็นเรื่องเล็กน้อย"], ["น้ำตาลย้อยหยดเท่าไรได้หนักหนา", "สิ่งเล็กน้อยเมื่อสะสมมากขึ้นย่อมเกิดผลใหญ่"], ["เห็นตอหลักปักขวางหนทางอยู่", "เมื่อพบอุปสรรคควรสังเกตและพิจารณาให้ดี"], ["พิเคราะห์ดูควรทึ้งแล้วจึงถอน", "ก่อนแก้ปัญหาควรคิดให้รอบคอบก่อนลงมือ"], ["เพชรอย่างดีมีค่าราคายิ่ง", "สิ่งที่มีคุณค่าควรรู้จักคุณค่าและรักษาไว้"], ["ส่งให้ลิงจะรู้ค่าราคาหรือ", "ของมีค่าหากอยู่กับผู้ไม่รู้คุณค่าก็ไม่เกิดประโยชน์"], ["เกิดเป็นคนเชิงดูให้รู้เท่า", "คนเราควรรู้เท่าทันเหตุการณ์และผู้อื่น"], ["ใจของเราไม่สอน ใจใครจะสอน", "ควรรู้จักเตือนและฝึกฝนตนเอง"], ["เป็นบ้าจี้นิยมชมว่าเอก", "อย่าหลงคำยกยอหรือคำชมจนเกินไป"], ["คนโหยกเหยกรักษายากลำบากหมอ", "คนที่ไม่มั่นคงหรือเอาแน่เอานอนไม่ได้ย่อมดูแลจัดการยาก"], ["อันยศศักดิ์มิใช่เหล้าเมาแต่พอ", "อย่าหลงระเริงในยศหรือตำแหน่ง"], ["สูงอย่าให้สูงกว่าฐานนานไปล้ม", "อย่าทำตนเกินฐานะหรือกำลังของตน"], ["จะเรียนคมเรียนไปเถิดอย่าเปิดฝัก", "ควรพัฒนาความรู้ความสามารถโดยไม่โอ้อวด"], ["เดินตามรอยผู้ใหญ่หมาไม่กัด", "การทำตามแบบอย่างที่ดีของผู้มีประสบการณ์ช่วยให้ปลอดภัย"], ["ใครทำตึงแล้วหย่อนผ่อนลงเอา", "ควรรู้จักผ่อนหนักผ่อนเบาให้เหมาะสม"], ["จงฟังหูไว้หูคอยดูไป", "ควรรับฟังข้อมูลอย่างมีวิจารณญาณ อย่าเพิ่งเชื่อทั้งหมด"], ["เชื่อน้ำใจดีกว่าอย่าเชื่อยุ", "ควรใช้วิจารณญาณและอย่าหลงเชื่อคำยุยง"], ["หญิงเรียกแม่ชายเรียกพ่อยอไว้ใช้", "การพูดจาอ่อนหวานและให้เกียรติช่วยให้ได้รับความร่วมมือ"], ["เอาปลาหมอเป็นครูดูปลาหมอ", "ควรเรียนรู้จากตัวอย่างและสังเกตวิธีเอาตัวรอด"], ["ฆ่าควายเสียดายพริก", "เมื่อลงมือทำเรื่องใหญ่แล้ว ไม่ควรตระหนี่กับค่าใช้จ่ายเล็กน้อยจนเสียงาน"]];
+let level=0,score=0,matched=0,first=null,lock=false,deck=[];
+const board=document.getElementById('board'),notice=document.getElementById('notice');
+function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function render(){
+ document.getElementById('stage').textContent=`ด่าน ${level+1} / 5`;
+ update();document.getElementById('next').hidden=true;board.innerHTML='';
+ deck=shuffle(allPairs.slice(level*5,level*5+5).flatMap((p,i)=>[
+  {id:i,kind:'proverb',text:p[0]},{id:i,kind:'meaning',text:p[1]}
+ ]));
+ deck.forEach((item,i)=>{const b=document.createElement('button');b.type='button';b.className='card closed';const s=document.createElement('span');s.textContent=item.text;b.appendChild(s);b.addEventListener('click',()=>flip(i,b));board.appendChild(b)});
+}
+function update(){document.getElementById('progress').textContent=`จับคู่ ${matched} / 5`;document.getElementById('score').textContent=`คะแนน ${score}`}
+function flip(i,b){
+ if(lock||deck[i].matched||deck[i].open)return;
+ deck[i].open=true;b.className='card open';
+ if(first===null){first=i;return}
+ const j=first,a=deck[j],c=deck[i];first=null;
+ if(a.id===c.id&&a.kind!==c.kind){
+  a.matched=c.matched=true;matched++;score++;
+  board.children[j].className='card matched';b.className='card matched';update();
+  if(matched===5){notice.textContent=level===4?'ครบทั้ง 5 ด่านแล้ว':'จับคู่ครบ 5 คู่แล้ว';document.getElementById('next').hidden=level===4}
+ }else{
+  lock=true;setTimeout(()=>{[j,i].forEach(k=>{deck[k].open=false;board.children[k].className='card closed'});lock=false},800)
+ }
+}
+document.getElementById('next').addEventListener('click',()=>{if(matched!==5||level===4)return;level++;matched=0;first=null;notice.textContent='';render()});
+document.getElementById('restart').addEventListener('click',()=>{level=0;score=0;matched=0;first=null;lock=false;notice.textContent='';render()});
+render();
+</script></body></html>
